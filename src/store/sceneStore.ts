@@ -39,6 +39,12 @@ interface SceneStore {
   showCameras: boolean
   toggleCameras: () => void
   
+  showAnnotations: boolean
+  toggleAnnotations: () => void
+  
+  showInspectionRoute: boolean
+  toggleInspectionRoute: () => void
+  
   animationFrame: number
   setAnimationFrame: (frame: number) => void
 }
@@ -145,6 +151,12 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
 
   showCameras: true,
   toggleCameras: () => set((state) => ({ showCameras: !state.showCameras })),
+
+  showAnnotations: true,
+  toggleAnnotations: () => set((state) => ({ showAnnotations: !state.showAnnotations })),
+
+  showInspectionRoute: false,
+  toggleInspectionRoute: () => set((state) => ({ showInspectionRoute: !state.showInspectionRoute })),
 
   animationFrame: 0,
   setAnimationFrame: (frame) => set({ animationFrame: frame }),

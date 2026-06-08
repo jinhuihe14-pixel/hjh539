@@ -1,6 +1,10 @@
 import { useSceneStore } from '../store/sceneStore'
 
-export function SimulationControls() {
+interface SimulationControlsProps {
+  onScreenshot?: () => void
+}
+
+export function SimulationControls({ onScreenshot }: SimulationControlsProps) {
   const { isSimulationRunning, simulationSpeed, toggleSimulation, setSimulationSpeed } = useSceneStore()
 
   const speeds = [0.5, 1, 2, 4]
@@ -26,6 +30,11 @@ export function SimulationControls() {
           </button>
         ))}
       </div>
+      {onScreenshot && (
+        <button className="sim-btn" onClick={onScreenshot} style={{ marginLeft: '8px' }}>
+          📷 截图
+        </button>
+      )}
     </div>
   )
 }

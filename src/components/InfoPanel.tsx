@@ -1,14 +1,18 @@
 import ReactECharts from 'echarts-for-react'
 import { useDeviceStore } from '../store/deviceStore'
+import { useMaintenanceStore } from '../store/maintenanceStore'
 
 interface InfoPanelProps {
   onClose: () => void
+  onOpenMaintenance?: () => void
 }
 
-export function InfoPanel({ onClose }: InfoPanelProps) {
+export function InfoPanel({ onClose, onOpenMaintenance }: InfoPanelProps) {
   const { devices, selectedDeviceId } = useDeviceStore()
+  const { getOrdersByDevice } = useMaintenanceStore()
   
   const selectedDevice = selectedDeviceId ? devices.get(selectedDeviceId) : null
+  const deviceOrders = selectedDeviceId ? getOrdersByDevice(selectedDeviceId) : []
 
   if (!selectedDevice) {
     return (
@@ -29,6 +33,12 @@ export function InfoPanel({ onClose }: InfoPanelProps) {
     standby: '待机',
     fault: '故障',
     maintenance: '维修中',
+  }
+
+  const maintenanceStatusLabels: Record<string, string> = {
+    pending: '待维保',
+    inProgress: '维保中',
+    completed: '已完成',
   }
 
   const chartOption = {
@@ -153,16 +163,48 @@ export function InfoPanel({ onClose }: InfoPanelProps) {
 
       <div className="device-card">
         <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: '#4fc3f7' }}>
+          维保工单
+        </div>
+        {deviceOrders.length === 0 ? (
+          <p style={{ fontSize: '12px', color: '#7a8fa6' }}>暂无维保工单</p>
+        ) : (
+          deviceOrders.slice(0, 3).map(order => (
+            <div key={order.id} className="order-item" onClick={onOpenMaintenance}>
+              <div className="order-item-header">
+                <span className="order-item-title">{order.title}</span>
+                <span className={`status-badge status-${order.status}`}>
+                  {maintenanceStatusLabels[order.status]}
+                </span>
+              </div>
+              {order.status === 'inProgress' && (
+                <div className="progress-bar small">
+                  <div className="progress-fill" style={{ width: `${order.progress}%` }}></div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+        <button 
+          className="control-btn" 
+          style={{ marginTop: '10px' }}
+          onClick={onOpenMaintenance}
+        >
+          🔧 查看全部工单
+        </button>
+      </div>
+
+      <div className="device-card">
+        <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: '#4fc3f7' }}>
           快捷操作
         </div>
         <button className="control-btn" style={{ marginBottom: '8px' }}>
           📊 查看报表
         </button>
         <button className="control-btn" style={{ marginBottom: '8px' }}>
-          🔧 维护记录
-        </button>
-        <button className="control-btn">
           🎯 定位设备
+        </button>
+        <button className="control-btn" onClick={onOpenMaintenance}>
+          📝 创建维保工单
         </button>
       </div>
     </div>

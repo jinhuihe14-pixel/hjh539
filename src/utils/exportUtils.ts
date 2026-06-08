@@ -35,12 +35,80 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-export function captureScreenshot(canvas: HTMLCanvasElement, filename: string = 'screenshot.png') {
-  canvas.toBlob((blob) => {
+export interface ScreenshotOptions {
+  filename?: string
+  watermark?: string
+  showTimestamp?: boolean
+  timestampFormat?: string
+  watermarkColor?: string
+  watermarkFontSize?: number
+}
+
+export function captureScreenshot(canvas: HTMLCanvasElement, options: ScreenshotOptions = {}) {
+  const {
+    filename = 'screenshot.png',
+    watermark = '',
+    showTimestamp = false,
+    watermarkColor = 'rgba(255, 255, 255, 0.6)',
+    watermarkFontSize = 14,
+  } = options
+
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.width = canvas.width
+  tempCanvas.height = canvas.height
+  const ctx = tempCanvas.getContext('2d')
+  if (!ctx) return
+
+  ctx.drawImage(canvas, 0, 0)
+
+  const lines: string[] = []
+  if (watermark) {
+    lines.push(watermark)
+  }
+  if (showTimestamp) {
+    lines.push(new Date().toLocaleString('zh-CN'))
+  }
+
+  if (lines.length > 0) {
+    ctx.font = `${watermarkFontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
+    ctx.fillStyle = watermarkColor
+    ctx.textBaseline = 'bottom'
+    ctx.textAlign = 'right'
+
+    const padding = 15
+    const lineHeight = watermarkFontSize + 6
+    const startY = canvas.height - padding
+
+    lines.reverse().forEach((line, index) => {
+      const y = startY - index * lineHeight
+      ctx.fillText(line, canvas.width - padding, y)
+    })
+  }
+
+  tempCanvas.toBlob((blob) => {
     if (blob) {
       downloadBlob(blob, filename)
     }
   }, 'image/png')
+}
+
+export function captureScreenshotWithTimestamp(canvas: HTMLCanvasElement, filename?: string) {
+  return captureScreenshot(canvas, {
+    filename: filename || `screenshot_${Date.now()}.png`,
+    showTimestamp: true,
+  })
+}
+
+export function captureScreenshotWithWatermark(
+  canvas: HTMLCanvasElement,
+  watermark: string,
+  filename?: string
+) {
+  return captureScreenshot(canvas, {
+    filename: filename || `screenshot_${Date.now()}.png`,
+    watermark,
+    showTimestamp: true,
+  })
 }
 
 export class ScreenRecorder {
@@ -56,6 +124,9 @@ export class ScreenRecorder {
   public async start(): Promise<void> {
     try {
       this.stream = (this.canvas as any).captureStream(60)
+      if (!this.stream) {
+        throw new Error('Failed to capture stream from canvas')
+      }
       this.recorder = new MediaRecorder(this.stream, {
         mimeType: 'video/webm;codecs=vp9',
       })
